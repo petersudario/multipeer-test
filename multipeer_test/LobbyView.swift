@@ -11,6 +11,11 @@ import MultipeerConnectivity
 
 struct LobbyView: View {
     @StateObject var session = MultipeerSession()
+    
+    var isHost: Bool {
+        session.advertiser != nil
+    }
+
 
     var body: some View {
         VStack(spacing: 20) {
@@ -37,16 +42,22 @@ struct LobbyView: View {
                         }
                     }
                 }
-            } else {
+            } else if !session.gameStarted {
                 Text("Connected to: \(session.connectedPeers.first?.displayName ?? "")")
                 Text("✅ Ready to play")
-                
-                Button("Enviar Mensagem de Teste") {
-                        let msg = "hello from \(session.myPeerID.displayName)"
-                        session.send(data: msg.data(using: .utf8)!)
-                    }
 
+                if isHost {
+                    Button("Play") {
+                        session.startGame()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding(.top, 20)
+                }
+
+            } else {
+                GameView(session: session)   // ← aqui vamos para o Grid Scene depois
             }
+
         }
         .padding()
     }

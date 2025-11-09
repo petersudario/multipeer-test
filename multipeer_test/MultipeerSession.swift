@@ -15,7 +15,8 @@ class MultipeerSession: NSObject, ObservableObject {
     @Published var discoveredPeers: [MCPeerID] = []
     @Published var isConnected: Bool = false
     @Published var invitationPeer: MCPeerID?
-
+    @Published var gameStarted: Bool = false
+    
     private let serviceType = "railgame"
 
     let myPeerID = MCPeerID(displayName: UIDevice.current.name)
@@ -55,6 +56,13 @@ class MultipeerSession: NSObject, ObservableObject {
         guard !session.connectedPeers.isEmpty else { return }
         try? session.send(data, toPeers: session.connectedPeers, with: .reliable)
     }
+    
+    func startGame() {
+        let data = "START_GAME".data(using: .utf8)!
+        send(data: data)
+        gameStarted = true
+    }
+
 }
 
 // MARK: - Session Delegate
@@ -77,13 +85,16 @@ extension MultipeerSession: MCSessionDelegate {
                  didReceive data: Data,
                  fromPeer peerID: MCPeerID) {
         DispatchQueue.main.async {
-            if let text = String(data: data, encoding: .utf8) {
-                print("📩 Mensagem recebida de \(peerID.displayName): \(text)")
-            } else {
-                print("📩 Recebido \(data.count) bytes de \(peerID.displayName)")
+            if let message = String(data: data, encoding: .utf8) {
+                if message == "START_GAME" {
+                    self.gameStarted = true   // client entra no jogo também
+                    return
+                }
+                print("📩 Mensagem recebida de \(peerID.displayName): \(message)")
             }
         }
     }
+
 
     func session(_ session: MCSession,
                  didReceive stream: InputStream,
